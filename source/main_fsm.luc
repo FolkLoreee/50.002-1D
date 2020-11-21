@@ -1,0 +1,186 @@
+module main_fsm (
+    input clk,  // clock
+    input rst,  // reset
+    input button_one,
+    input button_two,
+    output out
+  ) {
+  
+  /* TODO:
+     - Implement Button Input that uses edge detector (?) 
+     - How does the edge detector work with the slow clock of the FSM ? 
+     - Load answers from REGFILE 
+     - Implement proper OUTPUTS for the FSM 
+     - Implement Lives? If yes can impement in CHECK_ANS 
+     - Implement score system 
+  */
+  
+  // Temporary Pseudovariables 
+  const ANS_FROM_REGFILE = 0;
+  
+  // Initiate slow clock for a counter 
+  const CLKSPEED = 26;
+  const SLOWCLOCK_SIZE = 27;
+  
+  
+  counter slowClock(#SIZE(SLOWCLOCK_SIZE), .clk(clk), .rst(rst));
+  edge_detector slowClockEdge(#RISE(1), #FALL(0), .clk(clk));
+  
+  // dff counter[CLKSPEED](.clk(clk), .rst(rst));
+  // counter slowclock(#SIZE(1),#DIV(CLKSPEED), .clk(clk), .rst(rst));
+  
+  /* 12 FSM states
+     START
+     LOAD_ANS
+     CHECK_BTN_INIT
+     DISPLAY_ANS
+     
+     IDLE
+     
+     CHECK_ANS
+     BRANCH_CHECK
+     HIT
+     INCREASE_SCORE
+     INCREASE_COUNTER (BACK TO IDLE)
+     
+     GAME_OVER (BACK TO START ON RESET)  
+  */
+  
+  // Create FSM that is binded to FAST clock 
+  fsm main_fsm(.clk(clk),
+   .rst(rst)) = {START, LOAD_ANS, CHECK_BTN_INIT, DISPLAY_ANS, 
+                                        IDLE,
+                                        CHECK_ANS, BRANCH_CHECK, HIT, INCREASE_SCORE, 
+                                        INCREASE_COUNTER, GAME_OVER};
+
+  always {
+    out = 0;
+    
+    slowClockEdge.in = slowClock.value[SLOWCLOCK_SIZE - 1];
+    
+    case (main_fsm.q) {
+    
+      //  **** START state  **** 
+      main_fsm.START:
+         
+        main_fsm.d = main_fsm.LOAD_ANS;
+        
+        
+        
+      //  **** LOAD_ANS state  ****
+      // -> Load Answers from REGFILE
+      main_fsm.LOAD_ANS:
+        
+        // !! Need to store the answers somewhere here
+        main_fsm.d = main_fsm.CHECK_BTN_INIT;
+        
+        
+        
+      // **** CHECK_BTN_INIT state  **** 
+      // -> On Button Press, go to DISPLAY_ANS state
+      main_fsm.CHECK_BTN_INIT:
+        
+        // Wrap the below statement in IF statement for button 
+        // if (button == 1) {}
+        main_fsm.d = main_fsm.DISPLAY_ANS;  
+    
+       
+        
+       
+  
+      // ****  DISPLAY_ANS state **** 
+      // -> Display loaded answers from LOAD_ANS onto LED 
+      main_fsm.LOAD_ANS:
+        
+          main_fsm.d = main_fsm.IDLE;
+    
+        
+        
+      //  **** IDLE state  **** 
+      // -> Just wait 
+      // If button press, store the button input and go to CHECK_ANS
+      // If no button press, just go to CHECK_ANS on the slow clock 
+      main_fsm.IDLE:
+          
+        // We attach the slowClock to the IDLE state
+        // It will change state on every slow clock cycle   
+        if (slowClockEdge.out == b1) {
+          main_fsm.d = main_fsm.CHECK_ANS;
+        }
+        
+        // if (button == 1) 
+        // Store ans and change state 
+        if (button_one == 1 || button_two == 1) {
+        main_fsm.d = main_fsm.CHECK_ANS;
+        }
+        
+        
+        
+        
+      //  **** CHECK_ANS state **** 
+      // -> To detect button input from player 
+      // -> On Button input, go to CHECK_ANS  
+      main_fsm.CHECK_ANS:
+        
+        
+        // Check against answer from REGFILE
+        
+        // Correct Case 
+        if (button_one == ANS_FROM_REGFILE && button_two == ANS_FROM_REGFILE) {
+            main_fsm.d = main_fsm.HIT; 
+        } 
+        
+        // Wrong Case 
+        else {
+             // Minus lives if any .... 
+          
+            
+            main_fsm.d = main_fsm.GAME_OVER;
+        }
+        
+      
+        
+        
+        
+     //  **** HIT state (Redundant State, consider removing)  ****
+      main_fsm.HIT:
+          main_fsm.d = main_fsm.INCREASE_SCORE; 
+        
+      
+        
+        
+        
+        
+     // **** INCREASE_SCORE state ****
+     // -> Increase player score and reflect    
+     main_fsm.INCREASE_SCORE:
+          // Increase Score 
+        main_fsm.d =  main_fsm.INCREASE_COUNTER;
+        
+        
+        
+        
+        
+        
+      //  **** INCREASE COUNTER state **** 
+      // -> Counter that is used to reference the ANS_FROM_REGFILE 
+      // -> Might not be necessary, must see Marcus implementation 
+      main_fsm.INCREASE_COUNTER:
+         // Increase counter
+        main_fsm.d = main_fsm.IDLE;
+        
+        
+      
+     //  **** GAME OVER state  **** 
+     // -> Only can exit to START state when RESET is pressed 
+        
+      main_fsm.GAME_OVER:
+        if (rst == 1) {
+            main_fsm.d = main_fsm.START;
+        }
+        
+    default:
+      main_fsm.d = main_fsm.START;
+    }
+  }
+}
