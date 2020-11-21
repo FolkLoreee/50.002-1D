@@ -8,7 +8,11 @@ module au_top (
     output io_seg [8],      // 7-segment LEDs on IO Shield
     output io_sel [4],      // Digit select on IO Shield
     input io_button [5],    // 5 buttons on IO Shield
-    input io_dip [3][8]     // DIP switches on IO Shield
+    input io_dip [3][8],     // DIP switches on IO Shield
+    input button_red,
+    input button_blue,
+    output led_red,
+    output led_green
   ) {
   
   sig rst;                  // reset signal
@@ -30,5 +34,7 @@ module au_top (
     io_led = 3x{{8h00}};    // turn LEDs off
     io_seg = 8hff;          // turn segments off
     io_sel = 4hf;           // select no digits
+    led_red = button_red;
+    led_green = button_blue;
   }
 }

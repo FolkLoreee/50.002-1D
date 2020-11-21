@@ -3,8 +3,8 @@
   <files>
     <src top="true">au_top.luc</src>
     <component>reset_conditioner.luc</component>
-    <constraint lib="true">alchitry.acf</constraint>
     <constraint lib="true">au.xdc</constraint>
-    <constraint lib="true">io.acf</constraint>
+    <constraint>blinding_lights.xdc</constraint>
+    <constraint>custom.acf</constraint>
   </files>
 </project>
