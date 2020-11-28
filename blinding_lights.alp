@@ -3,7 +3,6 @@
   <files>
     <src top="true">au_top.luc</src>
     <component>reset_conditioner.luc</component>
-    <constraint lib="true">au.xdc</constraint>
     <constraint>blinding_lights.xdc</constraint>
     <constraint>custom.acf</constraint>
   </files>
