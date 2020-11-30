@@ -1,9 +1,16 @@
 module main_fsm (
     input clk,  // clock
     input rst,  // reset
-    input button_one,
-    input button_two,
-    output out
+    //input regA, // Input A from Regfile  
+    //input regB, // Input B from Regfile 
+    //input button_one,
+    //input button_two,
+    //input button_three,
+    input buttons[3],
+    //input counter_input, // To be used as the 'slowclock' that will come from au_top 
+    //output write_address, // Write Address for where to write in the REGFILE 
+    //output write_data, // Data to be written in to the regfile 
+    output out[8] 
   ) {
   
   /* TODO:
@@ -11,17 +18,21 @@ module main_fsm (
      - How does the edge detector work with the slow clock of the FSM ? 
      - Load answers from REGFILE 
      - Implement proper OUTPUTS for the FSM 
-     - Implement Lives? If yes can impement in CHECK_ANS 
+     - Implement Lives? If yes can implement in CHECK_ANS 
      - Implement score system 
+     - Need a DFF to store button input 
   */
   
   // Temporary Pseudovariables 
-  const ANS_FROM_REGFILE = 0;
+  const ANS_FROM_REGFILE = 1;
   
   // Initiate slow clock for a counter 
   const CLKSPEED = 26;
   const SLOWCLOCK_SIZE = 27;
   
+  
+  const Y_VALUES = {8h0C, 8h0B, 8h0A, 8h09, 8h08, 8h07, 8h06, 8h05, 8h04,8h03, 8h02, 8h01, 8h00};
+  // dff testCounter[4](#INIT(0), .clk(clk), .rst(rst));
   
   counter slowClock(#SIZE(SLOWCLOCK_SIZE), .clk(clk), .rst(rst));
   edge_detector slowClockEdge(#RISE(1), #FALL(0), .clk(clk));
@@ -38,7 +49,7 @@ module main_fsm (
      IDLE
      
      CHECK_ANS
-     BRANCH_CHECK
+     
      HIT
      INCREASE_SCORE
      INCREASE_COUNTER (BACK TO IDLE)
@@ -54,7 +65,7 @@ module main_fsm (
                                         INCREASE_COUNTER, GAME_OVER};
 
   always {
-    out = 0;
+    // out = Y_VALUES[testCounter.q];
     
     slowClockEdge.in = slowClock.value[SLOWCLOCK_SIZE - 1];
     
@@ -62,27 +73,38 @@ module main_fsm (
     
       //  **** START state  **** 
       main_fsm.START:
-         
-        main_fsm.d = main_fsm.LOAD_ANS;
+        
+        out = 8d1;
+        if (buttons[0]) {
+          main_fsm.d = main_fsm.LOAD_ANS;
+        }
         
         
         
       //  **** LOAD_ANS state  ****
       // -> Load Answers from REGFILE
       main_fsm.LOAD_ANS:
+        out = 8d2; 
+
+        if (buttons[0]) {
+          // !! Need to store the answers somewhere here
+          main_fsm.d = main_fsm.CHECK_BTN_INIT;
+        }
         
-        // !! Need to store the answers somewhere here
-        main_fsm.d = main_fsm.CHECK_BTN_INIT;
         
         
         
       // **** CHECK_BTN_INIT state  **** 
       // -> On Button Press, go to DISPLAY_ANS state
       main_fsm.CHECK_BTN_INIT:
-        
+        out = 8d3; 
         // Wrap the below statement in IF statement for button 
         // if (button == 1) {}
-        main_fsm.d = main_fsm.DISPLAY_ANS;  
+        
+        if (buttons[0]) {
+          main_fsm.d = main_fsm.DISPLAY_ANS;  
+        }
+        
     
        
         
@@ -90,9 +112,14 @@ module main_fsm (
   
       // ****  DISPLAY_ANS state **** 
       // -> Display loaded answers from LOAD_ANS onto LED 
-      main_fsm.LOAD_ANS:
+      main_fsm.DISPLAY_ANS:
+          out = 8d4;
         
-          main_fsm.d = main_fsm.IDLE;
+        
+          if (buttons[0]) {
+         main_fsm.d = main_fsm.IDLE;
+        }
+         
     
         
         
@@ -101,16 +128,19 @@ module main_fsm (
       // If button press, store the button input and go to CHECK_ANS
       // If no button press, just go to CHECK_ANS on the slow clock 
       main_fsm.IDLE:
-          
-        // We attach the slowClock to the IDLE state
-        // It will change state on every slow clock cycle   
-        if (slowClockEdge.out == b1) {
-          main_fsm.d = main_fsm.CHECK_ANS;
-        }
+         out = 8d5;
+        
+        
+         // Check the input counter values from the au_top 
+        // AN ARBITRARY VALUE OF 3 IS USED TEMPORARILY
+        
+        //if (counter_input == 3) {
+        //  main_fsm.d = main_fsm.CHECK_ANS; // This is to force the state change 
+        //}
         
         // if (button == 1) 
         // Store ans and change state 
-        if (button_one == 1 || button_two == 1) {
+        if (buttons[0] | buttons[1] | buttons[2]) {
         main_fsm.d = main_fsm.CHECK_ANS;
         }
         
@@ -118,24 +148,42 @@ module main_fsm (
         
         
       //  **** CHECK_ANS state **** 
-      // -> To detect button input from player 
-      // -> On Button input, go to CHECK_ANS  
+      // -> Check Lives 
+      // -> Check answer input (based on button)  
       main_fsm.CHECK_ANS:
+        out = 8d6;
+        if (buttons[0]) {
+            main_fsm.d = main_fsm.HIT;
+        }
         
+        /// Check against answer from REGFILE
         
-        // Check against answer from REGFILE
-        
-        // Correct Case 
-        if (button_one == ANS_FROM_REGFILE && button_two == ANS_FROM_REGFILE) {
+        // Correct Case , this is the one causing it to go to HIT
+        if (buttons[0] == ANS_FROM_REGFILE && buttons[1] == ANS_FROM_REGFILE) {
             main_fsm.d = main_fsm.HIT; 
         } 
+          
+        
         
         // Wrong Case 
-        else {
-             // Minus lives if any .... 
           
+       // First check the current lives left in the LIVES register (R5)
+          // if (regfile.r5 == 1) {main_fsm.d = main_fsm.GAME_OVER; }
+          
+          // If not, means lives just decremented 
+          // Minus lives by altering value in the REGFILE . 
+          // Provide the write_address (R5) and write_data (SUBC  (R5, -1, R5) )
+          // Reflect the lives counter on the 7SEG 
+          // Go back to IDLE state 
+          //write_address = d5; 
+       if (!buttons[0] == ANS_FROM_REGFILE | !buttons[1] == ANS_FROM_REGFILE | !buttons[2] == ANS_FROM_REGFILE) {
+        
+        
+          
+          
+           main_fsm.d = main_fsm.IDLE;
             
-            main_fsm.d = main_fsm.GAME_OVER;
+            
         }
         
       
@@ -144,7 +192,12 @@ module main_fsm (
         
      //  **** HIT state (Redundant State, consider removing)  ****
       main_fsm.HIT:
-          main_fsm.d = main_fsm.INCREASE_SCORE; 
+      
+          out = 8d7;
+        if (buttons[0]) {
+           main_fsm.d = main_fsm.INCREASE_SCORE; 
+        }
+       
         
       
         
@@ -154,8 +207,13 @@ module main_fsm (
      // **** INCREASE_SCORE state ****
      // -> Increase player score and reflect    
      main_fsm.INCREASE_SCORE:
-          // Increase Score 
+      out = 8d8;
+        if (buttons[0]) {
+        // Increase Score 
+       // ADDC( R5, 1, R5)
         main_fsm.d =  main_fsm.INCREASE_COUNTER;
+        }
+       
         
         
         
@@ -166,8 +224,18 @@ module main_fsm (
       // -> Counter that is used to reference the ANS_FROM_REGFILE 
       // -> Might not be necessary, must see Marcus implementation 
       main_fsm.INCREASE_COUNTER:
-         // Increase counter
+      
+        out = 8d9; 
+        
+        if (buttons[0]) {
+        // Increase counter
         main_fsm.d = main_fsm.IDLE;
+        }
+        
+        if (buttons[1]) {
+           main_fsm.d = main_fsm.GAME_OVER;
+        } 
+         
         
         
       
@@ -175,11 +243,14 @@ module main_fsm (
      // -> Only can exit to START state when RESET is pressed 
         
       main_fsm.GAME_OVER:
+        out = 8d10;
+        
         if (rst == 1) {
             main_fsm.d = main_fsm.START;
         }
         
     default:
+      out = 8d1;
       main_fsm.d = main_fsm.START;
     }
   }
