@@ -4,13 +4,13 @@
     <src top="true">au_top.luc</src>
     <src>ws2812b_writer.luc</src>
     <component>edge_detector.luc</component>
-    <component>reset_conditioner.luc</component>
     <src>led_main.luc</src>
+    <component>reset_conditioner.luc</component>
     <src>led_clock.luc</src>
     <component>counter.luc</component>
     <src>led_sequence.luc</src>
     <constraint lib="true">alchitry.acf</constraint>
-    <constraint lib="true">io.acf</constraint>
+    <constraint>custom.acf</constraint>
     <constraint lib="true">au.xdc</constraint>
   </files>
 </project>

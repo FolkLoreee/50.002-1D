@@ -1,15 +1,7 @@
 module led_main (
     input clk,              // 100MHz clock
     input rst_n,            // reset button (active low)
-    output led [8],         // 8 user controllable LEDs
-    input usb_rx,           // USB->Serial input
-    output outled,           // to LED strip, Br pin C49 
-    output usb_tx,          // USB->Serial output
-    output io_led [3][8],   // LEDs on IO Shield
-    output io_seg [8],      // 7-segment LEDs on IO Shield
-    output io_sel [4],      // Digit select on IO Shield
-    input io_button [5],    // 5 buttons on IO Shield
-    input io_dip [3][8]     // DIP switches on IO Shield
+    output outled[256][24]         // to LED strip, Br pin C49 
   ) {
   
   sig rst;                  // reset signal
@@ -26,7 +18,7 @@ module led_main (
                         {h000000, h000000, h000000, h000000, h000000, h000000, hFF0000, h000000},
                         {h000000, h000000, h000000, h000000, h000000, h000000, h000000, hFF0000}};
   
-  ws2812b_writer led_strip(#PIXEL_COUNT(256), .clk(clk), .rst(rst)); //set for 3 pixels
+  
   .clk(clk) {
     // The reset conditioner is used to synchronize the reset signal to the FPGA
     // clock. This ensures the entire FPGA comes out of reset at the same time.
@@ -36,37 +28,35 @@ module led_main (
   counter slowClock(#SIZE(SLOWCLOCK_SIZE), .clk(clk), .rst(rst));
   edge_detector slowClockEdge(#RISE(1), #FALL(0), .clk(clk));
   
-  dff led_colour[256](#INIT(0), .clk(clk), .rst(rst));
-  dff pointer[1](#INIT(0), .clk(clk), .rst(rst));
+  .clk(clk){
+  dff led_colour[256][24];
+  dff pointer[1];
+  
+  }
   
   always {
     reset_cond.in = ~rst_n; // input raw inverted reset signal
     rst = reset_cond.out;   // conditioned reset
-    
-    usb_tx = usb_rx;        // loop serial port
-    
-    led = 8h00;             // turn LEDs off
-    
-    io_led = 3x{{8h00}};    // turn LEDs off
-    io_seg = 8hff;          // turn segments off
-    io_sel = 4hf;           // select no digits
-    
+
     slowClockEdge.in = slowClock.value[SLOWCLOCK_SIZE - 1];
     
-    led_colour.d[41:0] = h000000;
-    led_colour.d[43:42] = hFF0000;
+    
+    if (slowClockEdge.out[0] < d8){
+    led_colour.d[41:0] = 42x{{h000000}};
+    led_colour.d[43:42] = 2x{{hFF0000}};
     led_colour.d[44] = h000000;
     led_colour.d[45] = LED_SEQUENCE[pointer.q][0];
-    led_colour.d[49:46] = h000000;
+    led_colour.d[49:46] = 4x{{h000000}};
     led_colour.d[50] = LED_SEQUENCE[pointer.q][0];
     led_colour.d[51] = h000000;
-    led_colour.d[53:52] = hFF0000;
-    led_colour.d[255:54] = h000000;
+    led_colour.d[53:52] = 2x{{hFF0000}};
+    led_colour.d[255:54] = 202x{{h000000}};
     
     pointer.d = pointer.q + 1;
-
-    led_strip.update=1; //sample write 
-    led_strip.color=led_colour.q[led_strip.pixel]; 
-    outled=led_strip.led;
+    outled = led_colour.q;  
+    }
+    else{
+    pointer.d = 0;
+    outled = led_colour.q;
   }
 }
