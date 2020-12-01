@@ -8,6 +8,7 @@
     <component>reset_conditioner.luc</component>
     <src>led_clock.luc</src>
     <component>counter.luc</component>
+    <src>decoder.luc</src>
     <src>led_sequence.luc</src>
     <constraint lib="true">alchitry.acf</constraint>
     <constraint>custom.acf</constraint>
