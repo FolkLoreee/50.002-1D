@@ -24,11 +24,7 @@ module led_clock (
   const O = 54;
   const P = 55;
   
-  const CLKSPEED = 26;
-  const SLOWCLOCK_SIZE = 27;
-  
- 
-  
+
   .clk(clk){
   dff led_colour[256][24];
   
@@ -159,10 +155,10 @@ module led_clock (
     led_colour.d[B+72:A+72] = 2x{{h000000}};
     led_colour.d[C+72] = LED_SEQUENCE[pointer][3];
     led_colour.d[D+72] = h000000;
-    led_colour.d[F+72:E+72] =2x{{answer[1]}};
+    led_colour.d[F+72:E+72] =2x{{answer[3]}};
     led_colour.d[H+72:G+72] = 2x{{h000000}};
     led_colour.d[J+72:I+72] = 2x{{h000000}};
-    led_colour.d[L+72:K+72] = 2x{{answer[1]}};
+    led_colour.d[L+72:K+72] = 2x{{answer[3]}};
     led_colour.d[M+72] = h000000;
     led_colour.d[N+72] = LED_SEQUENCE[pointer][3];
     led_colour.d[P+72:O+72] = 2x{{h000000}};
@@ -185,10 +181,10 @@ module led_clock (
     led_colour.d[B+120:A+120] = 2x{{h000000}};
     led_colour.d[C+120] = LED_SEQUENCE[pointer][5];
     led_colour.d[D+120] = h000000;
-    led_colour.d[F+120:E+120] =2x{{answer[1]}};
+    led_colour.d[F+120:E+120] =2x{{answer[5]}};
     led_colour.d[H+120:G+120] = 2x{{h000000}};
     led_colour.d[J+120:I+120] = 2x{{h000000}};
-    led_colour.d[L+120:K+120] = 2x{{answer[1]}};
+    led_colour.d[L+120:K+120] = 2x{{answer[5]}};
     led_colour.d[M+120] = h000000;
     led_colour.d[N+120] = LED_SEQUENCE[pointer][5];
     led_colour.d[P+120:O+120] = 2x{{h000000}};
@@ -211,10 +207,10 @@ module led_clock (
     led_colour.d[B+168:A+168] = 2x{{h000000}};
     led_colour.d[C+168] = LED_SEQUENCE[pointer][7];
     led_colour.d[D+168] = h000000;
-    led_colour.d[F+168:E+168] =2x{{answer[1]}};
+    led_colour.d[F+168:E+168] =2x{{answer[7]}};
     led_colour.d[H+168:G+168] = 2x{{h000000}};
     led_colour.d[J+168:I+168] = 2x{{h000000}};
-    led_colour.d[L+168:K+168] = 2x{{answer[1]}};
+    led_colour.d[L+168:K+168] = 2x{{answer[7]}};
     led_colour.d[M+168] = h000000;
     led_colour.d[N+168] = LED_SEQUENCE[pointer][7];
     led_colour.d[P+168:O+168] = 2x{{h000000}};

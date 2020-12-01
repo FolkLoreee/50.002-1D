@@ -16,6 +16,9 @@ pin led[7] LED7;
 pin usb_rx USB_TX;
 pin usb_tx USB_RX;
 
+pin outled C49;
+
+
 pin io_led[0][0] B21;
 pin io_led[0][1] B20;
 pin io_led[0][2] B18;
@@ -86,7 +89,7 @@ pin io_seg[5] A3;
 pin io_seg[6] A2;
 pin io_seg[7] A49;
 
-pin outled C49;
+
 
 //pin led_red C2 pulldown;
 //pin button_red C3 pulldown;

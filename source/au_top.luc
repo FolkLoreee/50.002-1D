@@ -15,13 +15,17 @@ module au_top (
   // main_fsm my_fsm(.clk(clk), .rst(io_button[2]));
   //  button_conditioner button_cond[3](.clk(clk));
   // edge_detector btn_detector[3](#RISE(1), #FALL(0), .clk(clk));
+  
   .clk(clk) {
     // The reset conditioner is used to synchronize the reset signal to the FPGA
     // clock. This ensures the entire FPGA comes out of reset at the same time.
     reset_conditioner reset_cond;
   }
-  led_clock myled_clock(.clk(clk),.rst(rst));
+  
+  
+  led_clock led_seq(.clk(clk),.rst(rst));
   decoder mydecoder(.clk(clk),.rst(rst));
+  ws2812b_writer led_strip(#PIXEL_COUNT(256), .clk(clk), .rst(rst)); //set for 3 pixels
   
   always {
     reset_cond.in = ~rst_n; // input raw inverted reset signal
@@ -31,13 +35,22 @@ module au_top (
     
     led = 8h00;             // turn LEDs off
     
-    io_led = 3x{{8h00}};    // turn LEDs off
+    io_led = io_dip;    // turn LEDs off
     io_seg = 8hff;          // turn segments off
     io_sel = 4hf;           // select no digits
-    mydecoder.sequence = b1001110010100101;
-    myled_clock.answer = mydecoder.led_sequence;
-    myled_clock.pointer = 0;
-    outled = 0;
+    
+    
+    mydecoder.sequence[15:8] = io_dip[1];
+    mydecoder.sequence[7:0] = io_dip[0];
+    
+    led_seq.answer = mydecoder.led_sequence;
+    led_seq.pointer = 1;
+
+    led_strip.update=1; //sample write 
+    led_strip.color= led_seq.led_seq[led_strip.pixel]; 
+    outled=led_strip.led;
+    
+    
     //button_cond.in = io_button[2:0];
     //btn_detector.in = button_cond.out;
     //my_fsm.buttons = btn_detector.out; 
