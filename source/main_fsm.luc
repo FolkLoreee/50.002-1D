@@ -1,16 +1,17 @@
 module main_fsm (
     input clk,  // clock
     input rst,  // reset
-    //input regA, // Input A from Regfile  
-    //input regB, // Input B from Regfile 
-    //input button_one,
-    //input button_two,
-    //input button_three,
+    input regA[16], // Input A from Regfile  
+    input regB[16], // Input B from Regfile 
+    input randomGenSequence[16],
     input buttons[3],
     //input counter_input, // To be used as the 'slowclock' that will come from au_top 
-    //output write_address, // Write Address for where to write in the REGFILE 
-    //output write_data, // Data to be written in to the regfile 
-    output out[8] 
+    output write_address [4], // Write Address for where to write in the REGFILE 
+    output write_data[16], // Data to be written in to the regfile 
+    output we,
+    output read_address_a[4],
+    output read_address_b[4],
+    output out[24] 
   ) {
   
   /* TODO:
@@ -65,7 +66,15 @@ module main_fsm (
                                         INCREASE_COUNTER, GAME_OVER};
 
   always {
-    // out = Y_VALUES[testCounter.q];
+      // Assign some random values to the outputs first 
+      write_address = 4d0;
+      write_data = 16d0;
+      we = 1b0;
+      read_address_a = 4d0;
+      read_address_b = 4d0;
+    
+    
+   
     
     slowClockEdge.in = slowClock.value[SLOWCLOCK_SIZE - 1];
     
@@ -84,8 +93,11 @@ module main_fsm (
       //  **** LOAD_ANS state  ****
       // -> Load Answers from REGFILE
       main_fsm.LOAD_ANS:
-        out = 8d2; 
-
+        out[7:0] = 8d2; 
+        out[23:8] = randomGenSequence[15:0];
+        we = 1;
+        write_address = 4d0;
+        write_data = randomGenSequence[15:0]; // au top must feed randomGenSequence to the regfile. 
         if (buttons[0]) {
           // !! Need to store the answers somewhere here
           main_fsm.d = main_fsm.CHECK_BTN_INIT;
@@ -113,9 +125,11 @@ module main_fsm (
       // ****  DISPLAY_ANS state **** 
       // -> Display loaded answers from LOAD_ANS onto LED 
       main_fsm.DISPLAY_ANS:
-          out = 8d4;
-        
-        
+          //out = 8d4;
+          read_address_a = 4d0;
+          out[23:8] = regA;
+          out[7:0] = 8d4; 
+          
           if (buttons[0]) {
          main_fsm.d = main_fsm.IDLE;
         }
@@ -128,8 +142,11 @@ module main_fsm (
       // If button press, store the button input and go to CHECK_ANS
       // If no button press, just go to CHECK_ANS on the slow clock 
       main_fsm.IDLE:
+      // display ans too 
          out = 8d5;
-        
+         if (buttons[0]) {
+          main_fsm.d = main_fsm.CHECK_ANS;
+        }   
         
          // Check the input counter values from the au_top 
         // AN ARBITRARY VALUE OF 3 IS USED TEMPORARILY
@@ -140,18 +157,22 @@ module main_fsm (
         
         // if (button == 1) 
         // Store ans and change state 
-        if (buttons[0] | buttons[1] | buttons[2]) {
-        main_fsm.d = main_fsm.CHECK_ANS;
-        }
+        //if (buttons[0] | buttons[1] | buttons[2]) {
+        //main_fsm.d = main_fsm.CHECK_ANS;
+        //}
         
         
-        
+             
         
       //  **** CHECK_ANS state **** 
       // -> Check Lives 
       // -> Check answer input (based on button)  
       main_fsm.CHECK_ANS:
         out = 8d6;
+        
+        // Answer is in read_address_a == 0 (R0)
+        read_address_a = 4d0; // R0
+        
         if (buttons[0]) {
             main_fsm.d = main_fsm.HIT;
         }
@@ -176,15 +197,9 @@ module main_fsm (
           // Reflect the lives counter on the 7SEG 
           // Go back to IDLE state 
           //write_address = d5; 
-       if (!buttons[0] == ANS_FROM_REGFILE | !buttons[1] == ANS_FROM_REGFILE | !buttons[2] == ANS_FROM_REGFILE) {
-        
-        
-          
-          
-           main_fsm.d = main_fsm.IDLE;
-            
-            
-        }
+      // if (!buttons[0] == ANS_FROM_REGFILE | !buttons[1] == ANS_FROM_REGFILE | !buttons[2] == ANS_FROM_REGFILE) {        
+        //   main_fsm.d = main_fsm.IDLE;                        
+        //}
         
       
         
@@ -251,6 +266,7 @@ module main_fsm (
         
     default:
       out = 8d1;
+    
       main_fsm.d = main_fsm.START;
     }
   }
