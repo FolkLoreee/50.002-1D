@@ -5,7 +5,8 @@ module main_fsm (
     input regB[16], // Input B from Regfile 
     input randomGenSequence[16],
     input buttons[3],
-    //input counter_input, // To be used as the 'slowclock' that will come from au_top 
+    input counter_input[8], // To be used as the 'slowclock' that will come from au_top 
+    output start_clock_signal,
     output write_address [4], // Write Address for where to write in the REGFILE 
     output write_data[16], // Data to be written in to the regfile 
     output we,
@@ -33,13 +34,13 @@ module main_fsm (
   
   
   const Y_VALUES = {8h0C, 8h0B, 8h0A, 8h09, 8h08, 8h07, 8h06, 8h05, 8h04,8h03, 8h02, 8h01, 8h00};
-  // dff testCounter[4](#INIT(0), .clk(clk), .rst(rst));
+
   
-  counter slowClock(#SIZE(SLOWCLOCK_SIZE), .clk(clk), .rst(rst));
-  edge_detector slowClockEdge(#RISE(1), #FALL(0), .clk(clk));
+ 
   
-  // dff counter[CLKSPEED](.clk(clk), .rst(rst));
-  // counter slowclock(#SIZE(1),#DIV(CLKSPEED), .clk(clk), .rst(rst));
+  dff answer_storer[2](#INIT(0), .clk(clk), .rst(rst));
+  
+ 
   
   /* 12 FSM states
      START
@@ -72,11 +73,9 @@ module main_fsm (
       we = 1b0;
       read_address_a = 4d0;
       read_address_b = 4d0;
+      start_clock_signal = 0;
     
     
-   
-    
-    slowClockEdge.in = slowClock.value[SLOWCLOCK_SIZE - 1];
     
     case (main_fsm.q) {
     
@@ -114,6 +113,7 @@ module main_fsm (
         // if (button == 1) {}
         
         if (buttons[0]) {
+          start_clock_signal = 1;
           main_fsm.d = main_fsm.DISPLAY_ANS;  
         }
         
@@ -125,11 +125,12 @@ module main_fsm (
       // ****  DISPLAY_ANS state **** 
       // -> Display loaded answers from LOAD_ANS onto LED 
       main_fsm.DISPLAY_ANS:
-          //out = 8d4;
+          
           read_address_a = 4d0;
           out[23:8] = regA;
-          out[7:0] = 8d4; 
-          
+          //out[7:0] = 8d4; 
+          out[7:0] = counter_input; // TESTING: Display on led to check whether counter_input is resetted 
+        
           if (buttons[0]) {
          main_fsm.d = main_fsm.IDLE;
         }
@@ -143,10 +144,30 @@ module main_fsm (
       // If no button press, just go to CHECK_ANS on the slow clock 
       main_fsm.IDLE:
       // display ans too 
-         out = 8d5;
+         out[7:0] = 8d5;
+         out[23:16] = counter_input;
+         out[15:8] = regA[15:8];
          if (buttons[0]) {
+          answer_storer.d = b01;
           main_fsm.d = main_fsm.CHECK_ANS;
         }   
+        
+        if (buttons[1]) {
+          answer_storer.d = b10;
+          main_fsm.d = main_fsm.CHECK_ANS;
+        }
+        
+        if (buttons[2]) {
+          answer_storer.d = b11;
+          main_fsm.d = main_fsm.CHECK_ANS;
+        }
+        
+        // TODO: This is supposed to be something else !! 
+        if (counter_input == counter_input + 2) {
+          answer_storer.d = b00;
+          main_fsm.d = main_fsm.CHECK_ANS;
+        }
+        
         
          // Check the input counter values from the au_top 
         // AN ARBITRARY VALUE OF 3 IS USED TEMPORARILY
@@ -169,23 +190,14 @@ module main_fsm (
       // -> Check answer input (based on button)  
       main_fsm.CHECK_ANS:
         out = 8d6;
-        
+         
         // Answer is in read_address_a == 0 (R0)
         read_address_a = 4d0; // R0
         
-        if (buttons[0]) {
+        if (answer_storer.q == regA[15:14]) {
             main_fsm.d = main_fsm.HIT;
-        }
-        
-        /// Check against answer from REGFILE
-        
-        // Correct Case , this is the one causing it to go to HIT
-        if (buttons[0] == ANS_FROM_REGFILE && buttons[1] == ANS_FROM_REGFILE) {
-            main_fsm.d = main_fsm.HIT; 
         } 
-          
-        
-        
+        else {
         // Wrong Case 
           
        // First check the current lives left in the LIVES register (R5)
@@ -196,6 +208,17 @@ module main_fsm (
           // Provide the write_address (R5) and write_data (SUBC  (R5, -1, R5) )
           // Reflect the lives counter on the 7SEG 
           // Go back to IDLE state 
+          main_fsm.d = main_fsm.GAME_OVER;
+        }
+        
+        /// Check against answer from REGFILE
+        
+        // Correct Case , this is the one causing it to go to HIT
+        
+          
+        
+        
+        
           //write_address = d5; 
       // if (!buttons[0] == ANS_FROM_REGFILE | !buttons[1] == ANS_FROM_REGFILE | !buttons[2] == ANS_FROM_REGFILE) {        
         //   main_fsm.d = main_fsm.IDLE;                        
@@ -209,9 +232,10 @@ module main_fsm (
       main_fsm.HIT:
       
           out = 8d7;
-        if (buttons[0]) {
-           main_fsm.d = main_fsm.INCREASE_SCORE; 
-        }
+        //if (buttons[0]) {
+        //   main_fsm.d = main_fsm.INCREASE_SCORE; 
+        //}
+        main_fsm.d = main_fsm.INCREASE_SCORE;
        
         
       
@@ -223,11 +247,12 @@ module main_fsm (
      // -> Increase player score and reflect    
      main_fsm.INCREASE_SCORE:
       out = 8d8;
-        if (buttons[0]) {
         // Increase Score 
-       // ADDC( R5, 1, R5)
+       // if (buttons[0]) {
         main_fsm.d =  main_fsm.INCREASE_COUNTER;
-        }
+       // ADDC( R5, 1, R5)
+      //  main_fsm.d =  main_fsm.INCREASE_COUNTER;
+       // }
        
         
         
@@ -242,14 +267,17 @@ module main_fsm (
       
         out = 8d9; 
         
-        if (buttons[0]) {
+        if (counter_input< 8) {
         // Increase counter
         main_fsm.d = main_fsm.IDLE;
         }
-        
-        if (buttons[1]) {
-           main_fsm.d = main_fsm.GAME_OVER;
-        } 
+         else {
+        // LOAD A FRESH ANSWER SEQUENCE WHEN THE CLOCK IS 8
+          out[23:8] = randomGenSequence[15:0];
+          we = 1;
+          write_address = 4d0;
+          write_data = randomGenSequence[15:0];
+        }
          
         
         
