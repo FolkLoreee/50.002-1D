@@ -6,25 +6,25 @@ module seq_plus_twoSlow (
   const CLOCK_SPEED=25;
   
   dff register_1[8](#INIT(1), .clk(clk), .rst(rst));
-  eight_bit_shiftleft shifter;
-  //adder plus_two;
+  // eight_bit_shiftleft shifter;
+  adder plus_two;
   counter slowClock(#SIZE(1), #DIV(CLOCK_SPEED), .clk(clk), .rst(rst));
   edge_detector slowClockEdge(#RISE(1), #FALL(0), .clk(clk));
   
   always {
     
    slowClockEdge.in = slowClock.value;
-    shifter.a = register_1.q;
-    shifter.b = 8h01;
+    // shifter.a = register_1.q;
+    // shifter.b = 8h01;
     
-  	//plus_two.num2 = 8h02;
-  	//plus_two.num1 = register_1.q;
-  	//plus_two.cin = b0;
+  	plus_two.num2 = 8h01;
+  	plus_two.num1 = register_1.q;
+  	plus_two.cin = b0;
     
 	 
     if (slowClockEdge.out == b1){ //only add when MSB of slowCLock == 1
-      //register_1.d = plus_two.s;
-      register_1.d = shifter.s;
+      register_1.d = plus_two.s;
+      // register_1.d = shifter.s;
     }
     //out = plus_two.s;
 	  out = shifter.s;
