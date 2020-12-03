@@ -7,15 +7,22 @@
     <component>edge_detector.luc</component>
     <src>seq_plus_twoSlow.luc</src>
     <component>pipeline.luc</component>
+    <src>decoder.luc</src>
     <src>adder.luc</src>
     <component>counter.luc</component>
     <src top="true">au_top.luc</src>
+    <src>led_clock.luc</src>
     <component>reset_conditioner.luc</component>
+    <src>alu.luc</src>
     <src>full_adder.luc</src>
+    <src>shifter.luc</src>
+    <src>compare.luc</src>
+    <src>ws2812b_writer.luc</src>
     <component>button_conditioner.luc</component>
+    <src>seven_seg.luc</src>
     <src>register.luc</src>
-    <constraint lib="true">alchitry.acf</constraint>
-    <constraint lib="true">io.acf</constraint>
-    <constraint lib="true">au.xdc</constraint>
+    <src>boolean.luc</src>
+    <constraint>blinding_lights.xdc</constraint>
+    <constraint>custom.acf</constraint>
   </files>
 </project>

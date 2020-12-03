@@ -1,0 +1,31 @@
+module boolean (
+    input a[16],
+    input b[16],
+    input alufn_signal[6],
+    output out[16]
+  ) {
+
+  
+  always {
+    //switch cases depending on which operations 
+    case(alufn_signal[3:0]){
+      //AND
+      b1000: out = a & b;
+      //NAND
+      b1001: out = ~(a&b);
+      //OR
+      b1110: out = a | b;
+      //NOR
+      b1111: out = ~(a | b);
+      //XOR
+      b0110: out = a ^ b;
+      //XNOR
+      b0111: out = ~(a^b);
+      //A
+      b1010: out = a;
+      default:
+        out = 16b0;
+    }
+   
+  }
+}

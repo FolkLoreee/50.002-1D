@@ -1,17 +1,29 @@
 module adder (
-  	input num1[8],
-  	input num2[8],
-  	input cin,
-  	output s[8],
-  	output cout
+// Note: a & b are 8-bit inputs. ALUFN is a 6-bit input
+// z, v, n are all 1-bit outputs.
+    input a[16],
+    input b[16],
+    input alufn_signal[6],
+    output out[16],
+    output z[1],
+    output v[1],
+    output n[1]
   ) {
-  full_adder fulladder[8];
+  // The signal out is write only and cannot be read.
+  // Hence, a signal s is used as a temp variable for the output.
+  sig s[16]; 
+  
   always {
-    fulladder.x = num1;
-	  fulladder.y = num2;
-	  fulladder.cin[0] = cin;
-	  fulladder.cin[7:1] = fulladder.cout[6:0];
-	  s = fulladder.s;
-	  cout = fulladder.cout[7];
+    s = 16b0; 
+
+    case(alufn_signal[0]){
+      0: s = a+b;
+      1: s = a-b;
+      default: s = 16b0;
+  }
+    n = s[15];
+    v = (a[15] & (b[15] ^ alufn_signal[0]) & !s[15]) | (!a[15] & !(b[15] ^ alufn_signal[0]) & s[15]); 
+    z = ~|s;
+    out = s;
   }
 }

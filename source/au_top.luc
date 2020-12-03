@@ -8,15 +8,28 @@ module au_top (
     output io_seg [8],      // 7-segment LEDs on IO Shield
     output io_sel [4],      // Digit select on IO Shield
     input io_button [5],    // 5 buttons on IO Shield
-    input io_dip [3][8]     // DIP switches on IO Shield
+    //input io_dip [3][8],   // DIP switches on IO Shield
+    input button_red,      // 01 
+    input button_blue,      // 10 
+     input button_green ,   // 11
+    output life[3],
+    output outled
+    
   ) {
   
   sig rst;                  // reset signal
+  
+  
+  led_clock led_seq(.clk(clk),.rst(rst));
+  decoder mydecoder(.clk(clk),.rst(rst));
+  ws2812b_writer led_strip(#PIXEL_COUNT(256), .clk(clk), .rst(rst)); //set for 3 pixels
+  
   
   seq_plus_twoSlow counterClock(.clk(clk), .rst(rst));
   
   main_fsm my_fsm(.clk(clk), .rst(io_button[3]));
   
+  alu central_alu;
   button_conditioner button_cond[3](.clk(clk));
   edge_detector btn_detector[3](#RISE(1), #FALL(0), .clk(clk));
  
@@ -41,6 +54,28 @@ module au_top (
     io_seg = 8hff;          // turn segments off
     io_sel = 4hf;           // select no digits
     
+    
+    
+    mydecoder.sequence[15:8] =my_fsm.out[23:16]; // change to fsm output 
+    mydecoder.sequence[7:0] = my_fsm.out[15:8]; 
+    
+    led_seq.answer = mydecoder.led_sequence;
+    led_seq.pointer = counterClock.pointer; // should take in the 
+
+    led_strip.update=1; //sample write 
+    led_strip.color= led_seq.led_seq[led_strip.pixel]; 
+    outled=led_strip.led;
+    
+    
+    
+    
+    // Inputs of ALU 
+    central_alu.a = my_fsm.alu_input_a;
+    central_alu.b = my_fsm.alu_input_b;
+    central_alu.alufn_signal = my_fsm.alufn_signal;
+    
+    my_fsm.alu_in = central_alu.out; 
+    
     // REGISTER ADDRESSES AND DATA 
     regfile.read_address_a = my_fsm.read_address_a; // 4 bit 
     regfile.read_address_b = my_fsm.read_address_b; // 4 bit 
@@ -51,13 +86,21 @@ module au_top (
     my_fsm.regB = regfile.out_b;            // 16 bit 
     
     // BUTTON TO CONTROL FSM
-    button_cond.in = io_button[2:0];
+  
+    
+    //button_cond.in = io_button[2:0];
+    button_cond.in[0] = button_red; // change to red later --> 01
+    button_cond.in[1] = button_blue;   // change to blue later ---> 10 
+    button_cond.in[2] = button_green; // --> 11 
+    
     btn_detector.in = button_cond.out;
     my_fsm.buttons = btn_detector.out; 
   
     // Counter Input to enter fsm
     my_fsm.counter_input = counterClock.out;
     
+    // Pointer Input to enter fsm 
+    my_fsm.pointer_input = counterClock.pointer;
     // Signal to start the clock counter only when the btn init is pressed 
     counterClock.start_signal = my_fsm.start_clock_signal;
     
@@ -66,6 +109,9 @@ module au_top (
     //io_led[1] = answerSequence.out;
     io_led[1] = my_fsm.out[15:8];
     io_led[2] = my_fsm.out[23:16];
+    
+    life[2:0] = my_fsm.life[2:0];
+    
    
     
   }

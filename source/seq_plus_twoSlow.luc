@@ -2,42 +2,65 @@ module seq_plus_twoSlow (
 	input clk,  // clock
 	input rst,  // reset
  input start_signal,
-	output out[8]
+  	output out[8],
+    output pointer[8]
   ) {
-  const CLOCK_SPEED=26;
+  const CLOCK_SPEED=24;
   
   dff register_1[8](#INIT(1), .clk(clk), .rst(rst));
+  dff register_2[8](#INIT(0), .clk(clk), .rst(rst));
+  dff start_signal_reg[1](#INIT(0), .clk(clk), .rst(rst));
   // eight_bit_shiftleft shifter;
-  adder plus_two;
+  //adder plus_two;
+  //adder pointer_adder;
+  alu plus_two;
   counter slowClock(#SIZE(1), #DIV(CLOCK_SPEED), .clk(clk), .rst(rst));
   edge_detector slowClockEdge(#RISE(1), #FALL(0), .clk(clk));
   
   always {
     
    slowClockEdge.in = slowClock.value;
+    start_signal_reg.d = start_signal;
     // shifter.a = register_1.q;
     // shifter.b = 8h01;
+    plus_two.alufn_signal = 6b0; 
+    	plus_two.b = 8h01;
+    	plus_two.a = register_1.q;
+    //	plus_two.cin = b0;
+      
+    //pointer_adder.num2 = 8h01;
+    //pointer_adder.num1 = register_2.q;
+    //pointer_adder.cin = b0;
     
-  	plus_two.num2 = 8h01;
-  	plus_two.num1 = register_1.q;
-  	plus_two.cin = b0;
-    
-	   if (start_signal == 1) {
-      register_1.d = 0;
-    }
-    
-    if (slowClockEdge.out == b1){ //only add when MSB of slowCLock == 1
-      if (plus_two.s == 8) {
-        register_1.d  = 0;
+	   if (start_signal_reg.q == 1) {
+      
+      
+      if (slowClockEdge.out == b1){ //only add when MSB of slowCLock == 1
+      if (plus_two.out == 4) {
+        if (register_2.q == 7) { // Reset the pointer when it reaches 8 
+          register_1.d = 0;  
+          register_2.d = 0;
+            
+        } else {
+          register_1.d  = 0;
+          register_2.d = register_2.q + 1; // Add one to the pointer every 3 counters 
+        }
         
       }
       else {
-      register_1.d = plus_two.s;
+      register_1.d = plus_two.out[7:0];
       } 
       
       // register_1.d = shifter.s;
+      }
+    } else {
+      register_1.d = 0;
+      register_2.d = 0; 
     }
-    out = plus_two.s;
+    
+    
+    out = plus_two.out[7:0];
+    pointer = register_2.q; 
 	  //out = shifter.s;
 
     
