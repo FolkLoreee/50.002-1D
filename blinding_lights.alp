@@ -5,12 +5,14 @@
     <component>pn_gen.luc</component>
     <src>main_fsm.luc</src>
     <component>edge_detector.luc</component>
+    <src>multi_seven_seg.luc</src>
     <src>seq_plus_twoSlow.luc</src>
     <component>pipeline.luc</component>
-    <src>decoder.luc</src>
     <src>adder.luc</src>
     <component>counter.luc</component>
+    <src>led_decoder.luc</src>
     <src top="true">au_top.luc</src>
+    <component>decoder.luc</component>
     <src>led_clock.luc</src>
     <component>reset_conditioner.luc</component>
     <src>alu.luc</src>

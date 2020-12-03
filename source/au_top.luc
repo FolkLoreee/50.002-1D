@@ -13,6 +13,9 @@ module au_top (
     input button_blue,      // 10 
      input button_green ,   // 11
     output life[3],
+    output seven_seg_ext[7],
+    output seven_seg_ds[2],
+    output seven_seg_dp[1],
     output outled
     
   ) {
@@ -21,7 +24,7 @@ module au_top (
   
   
   led_clock led_seq(.clk(clk),.rst(rst));
-  decoder mydecoder(.clk(clk),.rst(rst));
+  led_decoder mydecoder(.clk(clk),.rst(rst));
   ws2812b_writer led_strip(#PIXEL_COUNT(256), .clk(clk), .rst(rst)); //set for 3 pixels
   
   
@@ -40,6 +43,9 @@ module au_top (
     // The reset conditioner is used to synchronize the reset signal to the FPGA
     // clock. This ensures the entire FPGA comes out of reset at the same time.
     reset_conditioner reset_cond;
+    .rst(rst){
+      multi_seven_seg seg;
+    }
   }
   
   always {
@@ -55,6 +61,12 @@ module au_top (
     io_sel = 4hf;           // select no digits
     
     
+    // to be changed
+    seven_seg_ext = ~seg.seg;
+    seven_seg_dp = 0;
+    seven_seg_ds = ~seg.sel;
+        
+    seg.values = {my_fsm.score_second_digit , my_fsm.score_first_digit};
     
     mydecoder.sequence[15:8] =my_fsm.out[23:16]; // change to fsm output 
     mydecoder.sequence[7:0] = my_fsm.out[15:8]; 
@@ -111,7 +123,7 @@ module au_top (
     io_led[2] = my_fsm.out[23:16];
     
     life[2:0] = my_fsm.life[2:0];
-    
+   
    
     
   }

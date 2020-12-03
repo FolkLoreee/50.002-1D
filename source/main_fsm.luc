@@ -20,6 +20,8 @@ module main_fsm (
     output read_address_a[4],
     output read_address_b[4],
     output life[3],
+    output score_first_digit[5],
+    output score_second_digit[5],
     output out[24] 
   ) {
   
@@ -68,7 +70,7 @@ module main_fsm (
                                         CHECK_COUNTER, BUFFER, COPY_NEW_ANS, GAME_OVER};
     
   
-  
+  dff difficulty_level[1](#INIT(0), .clk(clk), .rst(rst));
   
   always {
       // Assign some random values to the outputs first 
@@ -83,14 +85,17 @@ module main_fsm (
       alu_input_b = b00000;
       out[15:8] = regA[7:0];
       out[23:16] = regA[15:8];
-      //life_register.d = 3;
-      case (life_register.q) {
-          0: life = b000;
-          1: life = b001;
-          2: life = b011;
-          3: life = b111;
-          default: life =  b111;
+    
+      score_first_digit = seven_seg_first.q;
+      score_second_digit = seven_seg_second.q; 
+      
+      case (difficulty_level.q) {
+        b0: life = b001;
+        b1: life = b011;
+        default: life = b001;
     }
+    
+    
     
       //left_pointer_index.d = ( 2*(9 - pointer_input) ) - 1;
       //right_pointer_index.d = ( 2*(9 - pointer_input) ) - 2; 
@@ -100,8 +105,9 @@ module main_fsm (
       //  **** START state  **** 
       main_fsm.START:
         start_clock_signal = 1;
+        out[7:0] = difficulty_level.q;
         
-        life_register.d = b111;
+         life = b111;
         //out[7:0] = 8d1;
         //out[15:8] = counter_input;
         //out[23:16] = pointer_input;
@@ -153,8 +159,13 @@ module main_fsm (
         out[15:8] = regA[7:0];
         
         if (buttons[0]) {
-          
+          difficulty_level.d = b0;
           main_fsm.d = main_fsm.LOAD_LIVES;  
+        }
+        
+         if (buttons[1]) {
+          difficulty_level.d = b1;
+          main_fsm.d = main_fsm.LOAD_LIVES;
         }
         
         
@@ -188,13 +199,13 @@ module main_fsm (
         //right_pointer_index.d = ( 2*(9 - pointer_input) ) - 2; 
         
         
-        //read_address_b = 4d1;
-        //out[15:8] = regB[7:0];
-        //out[23:16] = regB[15:8];
+        read_address_b = 4d1;
+        out[15:8] = regB[7:0];
+        out[23:16] = regB[15:8];
         
-        read_address_a = 4d0;
-        out[15:8] = regA[7:0];
-        out[23:16] = regA[15:8];
+        //read_address_a = 4d0;
+        //out[15:8] = regA[7:0];
+        //out[23:16] = regA[15:8];
         
         read_address_b = 4d2;
         
@@ -312,7 +323,7 @@ module main_fsm (
         out[7:0] = counter_input;
         write_address = 4d1;
         we = 1;
-        
+        out[23:8] = temp.q;
         //write_data = 16b1010101010101010; // Write the shifted sequence back into R1; R0 is intact because that is reflected on the LED. 
         write_data = temp.q; // ERROR HERE ALU IS MESSING UP  
         //write_data = alu_in;
@@ -333,16 +344,16 @@ module main_fsm (
 //      out = 8d8;
         // Increase Score 
        // if (buttons[0]) {
-        if (seven_seg_first.q == 9) {
-          seven_seg_first.d = 0;
+        if (seven_seg_first.q == 5d9) {
+          seven_seg_first.d = 5d0;
           seven_seg_second.d = seven_seg_second.q + 1;
         } else {
           seven_seg_first.d = seven_seg_first.q + 1;
         }
         
-        if (seven_seg_second.q == 9 & seven_seg_first.q == 9) {
-          seven_seg_first.d = 0;
-          seven_seg_second.d = 0;
+        if (seven_seg_second.q == 5d9 & seven_seg_first.q == 5d9) {
+          seven_seg_first.d = 5d0;
+          seven_seg_second.d =5d0;
         }
         main_fsm.d =  main_fsm.CHECK_COUNTER;
        // ADDC( R5, 1, R5)
@@ -364,12 +375,23 @@ module main_fsm (
         if (pointer_input < 7) {
           //read_address_b = 4d1;
           //out[23:8] = regB;
+          
           read_address_a = 4d0; 
           out[7:0] = counter_input;
           out[23:8] = regA;
-          main_fsm.d = main_fsm.BUFFER;
-        
           
+          
+          
+          if (difficulty_level.q == 0) {
+            out[23:8] = regA;
+            main_fsm.d = main_fsm.BUFFER;
+            
+          } else if (difficulty_level.q == 1) {
+              out[23:8] = 16b0;
+              main_fsm.d = main_fsm.BUFFER;
+            
+          }
+
         
         }
          else {

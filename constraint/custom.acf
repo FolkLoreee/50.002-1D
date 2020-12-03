@@ -98,3 +98,27 @@ pin button_green C9 pulldown;
 pin life[0] B42;
 pin life[1] B43;
 pin life[2] B31;
+
+
+
+//pin io_dip[1][6] A27 pulldown;
+//pin io_dip[1][7] A28 pulldown;
+//pin io_dip[2][0] A30 pulldown;
+//pin io_dip[2][1] A31 pulldown;
+//pin io_dip[2][2] A33 pulldown;
+//pin io_dip[2][3] A34 pulldown;
+//pin io_dip[2][4] A36 pulldown;
+//pin io_dip[2][5] A37 pulldown;
+//pin io_dip[2][6] A39 pulldown;
+//pin io_dip[2][7] A40 pulldown;
+
+pin seven_seg_ext[0] A27;
+pin seven_seg_ext[1] A28;
+pin seven_seg_ext[2] A30 ;
+pin seven_seg_ext[3] A31;
+pin seven_seg_ext[4] A33;
+pin seven_seg_ext[5] A34;
+pin seven_seg_ext[6] A36;
+pin seven_seg_ds[0] A37;
+pin seven_seg_ds[1] A39;
+pin seven_seg_dp[0] A40;
