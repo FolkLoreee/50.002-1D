@@ -10,3 +10,4 @@ There are 3 levels of difficulty in this version:
 
 ## Development
 This game was developed in Lucid, a hardware description language (HDL) similar to Verilog, using Alchitry's IDE.
+It was developed as a part of our 50.002 Computation Structures course in SUTD.
